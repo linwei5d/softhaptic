@@ -270,8 +270,7 @@ void RenderScene()
 	float aspect = float(g_screenWidth) / g_screenHeight;
 
 	Matrix44 proj = ProjectionMatrix(RadToDeg(fov), aspect, g_camNear, g_camFar);
-	Matrix44 view;
-		view = RotationMatrix(-g_camAngle.x,
+	Matrix44 view = RotationMatrix(-g_camAngle.x,
 		Vec3(0.0f, 1.0f, 0.0f))*RotationMatrix(-g_camAngle.y, Vec3(cosf(-g_camAngle.x), 0.0f, sinf(-g_camAngle.x)))*TranslationMatrix(-Point3(g_camPos));
 
 	// expand scene bounds to fit most scenes

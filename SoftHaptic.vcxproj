@@ -104,7 +104,7 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
     <EnableDPCppRuntimeEnvironment>true</EnableDPCppRuntimeEnvironment>
-    <UseIntelIPP1A>true</UseIntelIPP1A>
+    <UseIntelIPP1A>Static_Library</UseIntelIPP1A>
     <UseInteloneTBB>true</UseInteloneTBB>
     <UseInteloneMKL>Parallel</UseInteloneMKL>
     <UseILP64Interfaces1A>true</UseILP64Interfaces1A>
@@ -260,6 +260,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>opengl32.lib;cublas.lib;cuda.lib;cudadevrt.lib;cudart.lib;cudart_static.lib;SDL2main.lib;SDL2.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(CUDA_PATH)\lib\x64;3rd\openHaptic\utilities\lib\x64\Debug;3rd\openHaptic\lib\x64;3rd\SDL2-2.0.4\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
     </Link>
     <CudaCompile>
       <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
@@ -351,6 +352,7 @@
       <DebugInformationFormat>None</DebugInformationFormat>
       <OpenMPSupport>true</OpenMPSupport>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -359,6 +361,8 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <AdditionalDependencies>mkl_intel_lp64.lib;mkl_intel_thread.lib;mkl_core.lib;libiomp5md.lib;opengl32.lib;cublas.lib;cuda.lib;cudadevrt.lib;cudart.lib;cudart_static.lib;SDL2main.lib;SDL2.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>3rd\HapticReplay\Release;$(CUDA_PATH)\lib\x64;3rd\openHaptic\utilities\lib\x64\Release;3rd\openHaptic\lib\x64;3rd\GLFW\lib\Release\x64;3rd\Assimp\lib\Release;3rd\SDL2-2.0.4\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <LinkTimeCodeGeneration>UseFastLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+      <Profile>true</Profile>
     </Link>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>

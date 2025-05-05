@@ -5,6 +5,7 @@
 
 #include "manager.h"
 #include "bridge.h"
+#include <SDL2-2.0.4/include/SDL_video.h>
 
 Manager g_manager;
 

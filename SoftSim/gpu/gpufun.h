@@ -584,6 +584,8 @@ __device__ void MatrixProduct_D(float* A, float* B, float* R, int nx, int ny, in
 
 __device__ void MatrixSubstract_3_D(float* A, float* B, float* R);
 
+__device__ void MatrixProduct_3x3x4(const float* A, const float* B, float* R);
+
 __device__ void GetRotation_D(float F[3][3], float R[3][3]);
 
 __device__ float invSqrt(float x);

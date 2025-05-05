@@ -1,4 +1,4 @@
-#include "calculate.h"
+Ôªø#include "calculate.h"
 #include <Windows.h>
 bool OUTPUT_FVC = true;
 bool PRINT_COLLISION = false;
@@ -33,39 +33,33 @@ calculator::~calculator()
 
 void calculator::set_k(ValType k_vc, ValType k_c, ValType k_vct)
 {
+	m_k_vct = k_vc;
 	m_k_vc = k_vc;
 	m_k_c = k_c;
 
 	_r_lin = FVC_MAX / k_vc / 2;
-
-	m_k_vct = k_vct;
 }
 
 mat3 calculator::calculatePartialFVC_X(vec3 qg, vec3 qh)
 {
 	double r = l2dis(qg, qh);
-	mat3 result;
+	mat3 result, identity;
+	identity.setIdentity();
 	if (r < _r_lin)
 	{
-		mat3 identity;
-		identity.setIdentity();
 		result = -m_k_vc * identity;
 	}
 	else
 	{
 		vec3 e_r = (qg - qh) / r;
-		double f_r = saturationMapping(r);
-		double f_r_derivative = saturationMappingDerivative(r);
-		
-		mat3 identity;
-		identity.setIdentity();
 		mat3 e_r_matrix = e_r*e_r.transpose();
 
-		auto partial = -f_r / r * identity + (f_r/r - f_r_derivative) * e_r_matrix;
-		result = partial;
+		double f_r = saturationMapping(r);
+		double f_r_derivative = saturationMappingDerivative(r);
+
+		result = -f_r / r * identity + (f_r / r - f_r_derivative) * e_r_matrix;
 	}
-	m_partial_FVC_X = result;
-	return result;
+	return m_partial_FVC_X = result;
 }
 
 vec3 calculator::calculateFC(Point& p, ValType d, ValType k)
@@ -86,9 +80,7 @@ mat3 calculator::calculatePartialFC_X(Point& p, ValType k)
 
 mat3 calculator::calculatePartialFVC_Omega()
 {
-	mat3 result;
-	result.setZero();
-	return result;
+	return mat3::Zero();
 }
 
 ValType calculator::saturationMapping(ValType r)
@@ -100,9 +92,8 @@ ValType calculator::saturationMapping(ValType r)
 	}
 	else
 	{
-		double weight;
 		double upper_index = 2 * m_k_vc * (_r_lin - r) / FVC_MAX;
-		weight = 1 - 0.5 * exp(upper_index);
+		double weight = 1 - 0.5 * exp(upper_index);
 		result = FVC_MAX * weight;
 	}
 	return ValType(result);
@@ -110,8 +101,7 @@ ValType calculator::saturationMapping(ValType r)
 
 ValType calculator::saturationMappingDerivative(ValType r)
 {
-	ValType result = m_k_vc * exp(2 * m_k_vc * (_r_lin - r) / FVC_MAX);
-	return result;
+	return m_k_vc * exp(2 * m_k_vc * (_r_lin - r) / FVC_MAX);
 }
 
 vec3 calculator::solve_delta_x(vec3 F_C, vec3 F_VC, mat3 partial_F_C, mat3 partial_F_VC)
@@ -126,10 +116,10 @@ vec3 calculator::solve_delta_x(vec3 F_C, vec3 F_VC, mat3 partial_F_C, mat3 parti
 
 Quaterniond calculator::calculate_qt(vec3 Omega_h, vec3 Omega_g)
 {
-	Quaterniond result;
 	Quaterniond quat_g = Omega2Quaternion(Omega_g);
 	Quaterniond quat_h = Omega2Quaternion(Omega_h);
-	result = quat_h * quat_g.inverse();
+
+	Quaterniond result = quat_h * quat_g.inverse();
 
 	if (result.w() < 0)
 	{
@@ -142,36 +132,30 @@ Quaterniond calculator::calculate_qt(vec3 Omega_h, vec3 Omega_g)
 
 vec3 calculator::calculateTVC(Quaterniond qt)
 {
-	vec3 result(qt.x(), qt.y(), qt.z());
-	return result;
+	return vec3(qt.x(), qt.y(), qt.z());
 }
 
 mat3 calculator::calculatePartialTVC_Omega(Quaterniond qt)
 {
-	mat3 result; 
 	vec3 TVC = calculateTVC(qt);
 	double scalar_qT = qt.w();
 	mat3 part0;
 	part0.setIdentity();
 	mat3 part2 = genTildeMatrix(TVC);
-	result = 0.5 * (scalar_qT * part0 - part2);
-	return result;
+
+	return 0.5 * (scalar_qT * part0 - part2);
 }
 
 mat3 calculator::calculatePartialTVC_X()
 {
-	mat3 result;
-	result.setZero();
-	return result;
+	return mat3::Zero();
 }
 
 mat3 calculator::genTildeMatrix(vec3 r)
 {
-	mat3 result;
-	result << 0, -r(2), r(1),
-		r(2), 0, -r(0),
-		-r(1), r(0), 0;
-	return result;
+	return (mat3() << 0	   ,	 -r.z(), r.y(),
+					  r.z(), 0	   , -r.x(),
+					 -r.y(), r.x() , 0).finished();
 }
 
 vec3 calculator::calculateToolDir(vec3 Omega)
@@ -184,23 +168,21 @@ vec3 calculator::calculateToolDir(vec3 Omega)
 
 Eigen::Quaterniond calculator::Omega2Quaternion(vec3 Omega)
 {
-	double theta = Omega.norm();
+	// ‰ºòÂåñÔºöÂáèÂ∞ëËÆ°ÁÆóÊ¨°Êï∞
 	vec3 axis = Omega.normalized();
-	double halfTheta = theta / 2;
-	double w = cos(halfTheta);
-	double x = sin(halfTheta) * axis.x();
-	double y = sin(halfTheta) * axis.y();
-	double z = sin(halfTheta) * axis.z();
-	Quaterniond q;
-	if(w>0)
-	{
-		q = Quaterniond(w, x, y, z);
-	}
-	else
-	{
-		q = Quaterniond(-w, -x, -y, -z);
-	}
-	return q;
+	double halfTheta = Omega.norm() * 0.5;
+
+	double _sin = sin(halfTheta);
+	double _cos = cos(halfTheta);
+
+	double x = _sin * axis.x();
+	double y = _sin * axis.y();
+	double z = _cos * axis.z();
+
+	#define w _cos
+	return w > 0 ? Quaterniond(w, x, y, z)
+				 : Quaterniond(-w, -x, -y, -z);
+	#undef w
 }
 
 vec3 calculator::Quaternion2Omega(Eigen::Quaterniond q)
@@ -255,10 +237,8 @@ Eigen::Matrix<double,6,1> calculator::solve_6DOF(vec3 Xh, vec3 Xg, vec3 Omega_h,
 	vec3 Xg_grasp = Xg + Dir_g * l;
 	vec3 Xh_grasp = Xh + Dir_h * l;
 
-	LARGE_INTEGER Freq;
+	LARGE_INTEGER Freq, T1, T2;
 	QueryPerformanceFrequency(&Freq);
-	LARGE_INTEGER T1;
-	LARGE_INTEGER T2;
 	QueryPerformanceCounter(&T1);
 	vec3 F_VC = calculateFVC(Xg_grasp, Xh_grasp);
 	auto qT = calculate_qt(Omega_h, Omega_g);
@@ -321,7 +301,7 @@ Eigen::Matrix<double,6,1> calculator::solve_6DOF(vec3 Xh, vec3 Xg, vec3 Omega_h,
 	{
 		delta_3dof = delta_3dof / l2dis(delta_3dof) * DELTA_X_MAX;
 	}
-	// limit max Omega œﬁ÷∆◊Ó¥ÛΩ«ÀŸ∂»
+	// limit max Omega ÈôêÂà∂ÊúÄÂ§ßËßíÈÄüÂ∫¶
 	vec3 dir = Dir_g;
 	vec3 deltaOmega = delta.block(3, 0, 3, 1);
 
@@ -353,18 +333,16 @@ Eigen::Matrix<double,6,1> calculator::solve_6DOF(vec3 Xh, vec3 Xg, vec3 Omega_h,
 
 mat3 calculator::SkewSymmetricMatrix(vec3 v)
 {
-	mat3 m;
-	m << 0, -v(2), v(1),
-		v(2), 0, -v(0),
-		-v(1), v(0), 0;
-	return m;
+	return (mat3() << 0, -v(2), v(1),
+					  v(2), 0, -v(0),
+					 -v(1), v(0), 0).finished();
 }
 
 vec3 calculator::calculateFVC(vec3 Xg, vec3 Xh)
 {
 	double r = l2dis(Xg, Xh);
 	vec3 e_r;
-	if (r > EPS)// ±‹√‚≥˝¡„¥ÌŒÛ
+	if (r > EPS)// ÈÅøÂÖçÈô§Èõ∂ÈîôËØØ
 		e_r = (Xg - Xh) / r;
 	else
 		e_r = vec3(0, 0, 0);
@@ -488,8 +466,7 @@ vec3 calculator::solve_delta_x_with_degeneration(vec3 Xh, vec3 Xg, vec3 F_C, vec
 
 vec3 calculator::calculateR(vec3 p, vec3 Xg_grasp)
 {
-	vec3 r = p - Xg_grasp;
-	return r;
+	return p - Xg_grasp;
 }
 
 vec3 calculator::calculateFC(vec3 N0, double d)
@@ -513,8 +490,7 @@ vec3 calculator::calculateTC(vec3 r, vec3 Fc)
 
 mat3 calculator::calculatePartialFC_X(vec3 N0)
 {
-	mat3 partialFC_X = -m_k_c * N0 * N0.transpose();
-	return partialFC_X;
+	return -m_k_c * N0 * N0.transpose();
 }
 
 mat3 calculator::calculatePartialFC_Omega(vec3 r, vec3 N0, double d)
@@ -547,11 +523,7 @@ Point::Point()
 	normal << 0, 0, 0;
 }
 
-Point::Point(vec3 p, vec3 n)
-	:pos(p), normal(n)
-{
-
-}
+Point::Point(vec3 p, vec3 n) :pos(p), normal(n) {}
 
 bool Point::normalize()
 {

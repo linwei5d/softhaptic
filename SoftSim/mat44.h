@@ -13,25 +13,10 @@ public:
 			    T c13, T c23, T c33, T c43,
 				 T c14, T c24, T c34, T c44)
 	{
-		columns[0][0] = c11;
-		columns[0][1] = c21;
-		columns[0][2] = c31;
-		columns[0][3] = c41;
-
-		columns[1][0] = c12;
-		columns[1][1] = c22;
-		columns[1][2] = c32;
-		columns[1][3] = c42;
-
-		columns[2][0] = c13;
-		columns[2][1] = c23;
-		columns[2][2] = c33;
-		columns[2][3] = c43;
-
-		columns[3][0] = c14;
-		columns[3][1] = c24;
-		columns[3][2] = c34;
-		columns[3][3] = c44;
+		columns[0][0] = c11; columns[0][1] = c21; columns[0][2] = c31; columns[0][3] = c41;
+		columns[1][0] = c12; columns[1][1] = c22; columns[1][2] = c32; columns[1][3] = c42;
+		columns[2][0] = c13; columns[2][1] = c23; columns[2][2] = c33; columns[2][3] = c43;
+		columns[3][0] = c14; columns[3][1] = c24; columns[3][2] = c34; columns[3][3] = c44;
 	}
 
 	__forceinline operator T* () { return &columns[0][0]; }
@@ -66,14 +51,14 @@ public:
 	// scalar multiplication
 	__forceinline XMatrix44<T>& operator *= (const T& s)
 	{
-		for (int c=0; c < 4; ++c)
+		// 优化：循环展开
+		for (int i = 0; i < 4; ++i)
 		{
-			for (int r=0; r < 4; ++r)
-			{
-				columns[c][r] *= s;
-			}
+			columns[i][0] *= s;
+			columns[i][1] *= s;
+			columns[i][2] *= s;
+			columns[i][3] *= s;
 		}
-
 		return *this;
 	}
 
@@ -82,14 +67,16 @@ public:
 		BHAssert( lhs != result);
 		BHAssert( rhs != result);
 		
-		for (int i=0; i < 4; ++i) {
-			for (int j=0; j < 4; ++j) {
-				result[j*4+i]  = rhs[j*4+0]*lhs[i+0]; 
-				result[j*4+i] += rhs[j*4+1]*lhs[i+4];
-				result[j*4+i] += rhs[j*4+2]*lhs[i+8];
-				result[j*4+i] += rhs[j*4+3]*lhs[i+12];
-			}
-		}
+		// 优化：完全展开循环
+		#define MUL_ROW(i, j) \
+        result[j*4+i] = rhs[j*4+0]*lhs[i+0] + rhs[j*4+1]*lhs[i+4] + \
+                        rhs[j*4+2]*lhs[i+8] + rhs[j*4+3]*lhs[i+12]
+
+		MUL_ROW(0, 0); MUL_ROW(0, 1); MUL_ROW(0, 2); MUL_ROW(0, 3);
+		MUL_ROW(1, 0); MUL_ROW(1, 1); MUL_ROW(1, 2); MUL_ROW(1, 3);
+		MUL_ROW(2, 0); MUL_ROW(2, 1); MUL_ROW(2, 2); MUL_ROW(2, 3);
+		MUL_ROW(3, 0); MUL_ROW(3, 1); MUL_ROW(3, 2); MUL_ROW(3, 3);
+		#undef MUL_ROW
 	}
 
 	static __forceinline XMatrix44 Mul( const XMatrix44& M1, const XMatrix44& M2 ) {
@@ -173,15 +160,19 @@ template<typename T>
 __forceinline XMatrix44<T> Transpose(const XMatrix44<T>& m)
 {
 	XMatrix44<float> inv;
+	// 优化：使用SSE转置
+	__m128 row0 = _mm_load_ps(&m.columns[0][0]);
+	__m128 row1 = _mm_load_ps(&m.columns[1][0]);
+	__m128 row2 = _mm_load_ps(&m.columns[2][0]);
+	__m128 row3 = _mm_load_ps(&m.columns[3][0]);
 
-	// transpose
-	for (BHUint32 c=0; c < 4; ++c)
-	{
-		for (BHUint32 r=0; r < 4; ++r)
-		{
-			inv.columns[c][r] = m.columns[r][c];
-		}
-	}
+	// 使用SSE内置转置指令
+	_MM_TRANSPOSE4_PS(row0, row1, row2, row3);
+
+	_mm_store_ps(&inv.columns[0][0], row0);
+	_mm_store_ps(&inv.columns[1][0], row1);
+	_mm_store_ps(&inv.columns[2][0], row2);
+	_mm_store_ps(&inv.columns[3][0], row3);
 
 	return inv;
 }
