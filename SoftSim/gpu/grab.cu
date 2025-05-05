@@ -87,7 +87,7 @@ extern "C" int runcalculateCollisionCylinderMU(
 	{
 	case grab: {
 		//break;
-		int threadNum = 512;
+		int threadNum = 128;
 		int blockNum = (triVertNum_d + threadNum - 1) / threadNum;
 		//第一次夹取时判断夹取区域
 		if (*firstGrab) {
@@ -114,7 +114,7 @@ extern "C" int runcalculateCollisionCylinderMU(
 		break;
 	}
 	case normal: {
-		int threadNum = 512;
+		int threadNum = 128;
 		int blockNum = (triVertNum_d + threadNum - 1) / threadNum;
 		*firstGrab = true;
 		//连续碰撞检测
@@ -844,7 +844,7 @@ __global__ void calculateToolShiftMU(float* cylinderPos, float* cylinderDir, flo
 //	{
 //
 //	case grab: {
-//		int  threadNum = 512;
+//		int  threadNum = 128;
 //		int blockNum = (tetVertNum_d + threadNum - 1) / threadNum;
 //		//在每次夹取的第一次进行夹取区域的判断
 //		if (*firstGrab) {
@@ -877,7 +877,7 @@ __global__ void calculateToolShiftMU(float* cylinderPos, float* cylinderDir, flo
 //		break;
 //	}
 //	case normal: {
-//		int  threadNum = 512;
+//		int  threadNum = 128;
 //		int blockNum = (tetVertNum_d + threadNum - 1) / threadNum;
 //		*firstGrab = true;
 //		//并行计算碰撞

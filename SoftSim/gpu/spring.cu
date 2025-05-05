@@ -5,7 +5,7 @@
 extern "C" int runcalculateSTMU(float damping, float dt) {
 
 	//每个block中的线程数
-	int threadNum = 512;
+	int threadNum = 128;
 	int blockNum = (triVertNum_d + threadNum - 1) / threadNum;
 	calculateSTMU << <blockNum, threadNum >> > (triVertPos_d, triVertPos_old_d, triVertPos_prev_d, triVertVelocity_d, triVertExternForce_d, 
 		triVertFixed_d, triVertNum_d, gravityX_d, gravityY_d, gravityZ_d, damping, dt);
@@ -69,7 +69,7 @@ extern "C" int runClearCollisionMU() {
 
 //计算顶点的受力
 extern "C" int runcalculateIFMU() {
-	int threadNum = 512;
+	int threadNum = 128;
 	int blockNum = (triEdgeNum_d + threadNum - 1) / threadNum;
 
 	//printf("spring number: %d\n", triEdgeNum_d);
@@ -206,7 +206,7 @@ __global__ void calculateIFMU(float* positions, float* force,
 int runcalculateRestPosForceWithTetPos(float toolRadius)
 {
 
-	int threadNum = 512;
+	int threadNum = 128;
 	int blockNum = (triVertNum_d + threadNum - 1) / threadNum;
 
 	// 根据距离自动调整restpos stiffness。 需要进一步调整曲线
@@ -472,7 +472,7 @@ __global__ void calculateRestPosWithTetPosMU(float* positions, int* skeletonInde
 
 ///计算每个顶点的restpos约束
 int runcalculateRestPosMU() {
-	int  threadNum = 512;
+	int  threadNum = 128;
 	int blockNum = (tetNum_d + threadNum - 1) / threadNum;
 	calculateRestPosStiffness << <blockNum, threadNum >> > (
 		toolPositionAndDirection_d, toolCollideFlag_d, tetVertPos_d, tetVertisCollide_d, tetVertRestStiffness_d, 1, tetVertNum_d
@@ -490,7 +490,7 @@ int runcalculateRestPosMU() {
 //切比雪夫更新位置
 extern "C" int runcalculatePosMU(float omega, float dt) {
 
-	int threadNum = 512;
+	int threadNum = 128;
 	int blockNum = (triVertNum_d + threadNum - 1) / threadNum;
 	//并行计算
 	
@@ -607,7 +607,7 @@ __global__ void calculatePOSMU(float* positions, float* force, float* fixed, flo
 //更新速度
 extern "C" int runcalculateVMU(float dt) {
 
-	int threadNum = 512;
+	int threadNum = 128;
 	int blockNum = (triVertNum_d + threadNum - 1) / threadNum;
 	
 	calculateVMU << <blockNum, threadNum >> > (triVertPos_d, triVertVelocity_d, triVertPos_old_d, triVertNum_d, dt);

@@ -7,9 +7,9 @@ __global__ void calculateVec3Len(float* vec, float* len, int vecNum)
 	unsigned int threadid = blockIdx.x * blockDim.x + threadIdx.x;
 	if (threadid >= vecNum) return;
 
-	float x = vec[threadid * 3];
-	float y = vec[threadid * 3 + 1];
-	float z = vec[threadid * 3 + 2];
+	const float x = vec[threadid * 3];
+	const float y = vec[threadid * 3 + 1];
+	const float z = vec[threadid * 3 + 2];
 	// 优化：使用单精度
 	len[threadid] = sqrtf(x * x + y * y + z * z);
 }
@@ -17,7 +17,7 @@ __global__ void calculateVec3Len(float* vec, float* len, int vecNum)
 //计算初始状态
 int runcalculateST(float damping, float dt) {
 	//每个block中的线程数
-	int  threadNum = 512;
+	int  threadNum = 128;
 	//每个grid中的block数(为了保证)
 	int blockNum = (tetVertNum_d + threadNum - 1) / threadNum;
 
@@ -36,12 +36,12 @@ __global__ void calculateST(float* positions, float* velocity, float* externForc
 	float* old_positions, float* prev_positions, float* last_Positions, float* fixed,
 	int vertexNum, float gravityX, float gravityY, float gravityZ, float damping, float dt)
 {
-	unsigned int threadid = blockIdx.x * blockDim.x + threadIdx.x;
+	const int threadid = blockIdx.x * blockDim.x + threadIdx.x;
 	if (threadid >= vertexNum) return;
 
-	int indexX = threadid * 3;
-	int indexY = threadid * 3 + 1;
-	int indexZ = threadid * 3 + 2;
+	const int indexX = threadid * 3;
+	const int indexY = threadid * 3 + 1;
+	const int indexZ = threadid * 3 + 2;
 
 	last_Positions[indexX] = positions[indexX];
 	last_Positions[indexY] = positions[indexY];
@@ -96,7 +96,7 @@ int runClearForce()
 
 int runCalculateTetEdgeSpringConstraint()
 {
-	int threadNum = 512;
+	int threadNum = 128;
 	int blockNum = (tetSpringNum_d + threadNum - 1) / threadNum;
 	//printf("tetSpringNum_d:%d\n", tetSpringNum_d);
 	calculateTetEdgeSpringConstraint << <blockNum, threadNum >> > (
@@ -115,11 +115,11 @@ __global__ void calculateTetEdgeSpringConstraint(
 	float* springStiffness, float* springOrigin, int * springIndex, 
 	int springNum)
 {
-	unsigned int threadid = blockIdx.x * blockDim.x + threadIdx.x;
+	const int threadid = blockIdx.x * blockDim.x + threadIdx.x;
 	if (threadid >= springNum) return;
 
-	int vIndex0 = springIndex[threadid * 2] * 3;
-	int vIndex1 = springIndex[threadid * 2 + 1] * 3;
+	const int vIndex0 = springIndex[threadid * 2] * 3;
+	const int vIndex1 = springIndex[threadid * 2 + 1] * 3;
 
 	float d[3];
 	for (int i = 0;i < 3;i++)
@@ -130,7 +130,7 @@ __global__ void calculateTetEdgeSpringConstraint(
 	float increment = (springOrigin[threadid] / sqrtf(d[0] * d[0] + d[1] * d[1] + d[2] * d[2])) - 1.0;
 	if (increment < 0.0) return;
 
-	float k_scale = springStiffness[threadid] * increment;
+	const float k_scale = springStiffness[threadid] * increment;
 
 	for (int i = 0;i < 3;i++)
 	{
@@ -141,8 +141,8 @@ __global__ void calculateTetEdgeSpringConstraint(
 }
 
 int runcalculateIF() {
-
-	int  threadNum = 512;
+	// 优化：高灵活度函数
+	int  threadNum = 64;
 	int blockNum = (tetNum_d + threadNum - 1) / threadNum;
 	//并行计算
 	calculateIF << <blockNum, threadNum >> > (tetVertPos_d, tetIndex_d,
@@ -159,7 +159,7 @@ int runcalculateIF() {
 
 ///计算每个顶点的restpos约束
 int runcalculateRestPos() {
-	int  threadNum = 512;
+	int  threadNum = 128;
 	int blockNum = (tetNum_d + threadNum - 1) / threadNum;
 	calculateRestPosStiffness << <blockNum, threadNum >> > (
 		toolPositionAndDirection_d, toolCollideFlag_d, tetVertPos_d, tetVertisCollide_d, tetVertRestStiffness_d, 1, tetVertNum_d
@@ -175,7 +175,7 @@ int runcalculateRestPos() {
  }
 // 优化：加速计算，97ms -> 90ms
 __global__ void calculateRestPosStiffness(float* ballPos, unsigned char* toolCollideFlag, float* positions, unsigned char* isCollide, float* reststiffness, int toolNum, int vertexNum) {
-	unsigned int threadid = blockIdx.x * blockDim.x + threadIdx.x;
+	const int threadid = blockIdx.x * blockDim.x + threadIdx.x;
 	if (threadid >= vertexNum) return;
 	//根据与工具的距离或者碰撞信息，计算restpos刚度系数
 	const float maxStiffness = 200.0;
@@ -213,14 +213,14 @@ __global__ void calculateRestPosStiffnessWithMesh_part(
 	unsigned char* isCollide, float* meshStiffness,
 	int toolNum, int* sortedTetVertIndices, int startIdx, int activeElementNum)
 {
-	unsigned int threadid = blockIdx.x * blockDim.x + threadIdx.x;
+	const int threadid = blockIdx.x * blockDim.x + threadIdx.x;
 	//根据与工具的距离或者碰撞信息，计算restpos刚度系数
 	if (threadid >= activeElementNum) return;
 
-	int tetVertIdx = sortedTetVertIndices[startIdx + threadid];
-	int indexX = tetVertIdx * 3;
-	int indexY = tetVertIdx * 3 + 1;
-	int indexZ = tetVertIdx * 3 + 2;
+	const int tetVertIdx = sortedTetVertIndices[startIdx + threadid];
+	const int indexX = tetVertIdx * 3;
+	const int indexY = tetVertIdx * 3 + 1;
+	const int indexZ = tetVertIdx * 3 + 2;
 
 	float disSq = 1e9 + 7;  //计算顶点到两个工具最近的距离
 	float p[3] = { positions[indexX], positions[indexY], positions[indexZ] };
@@ -259,13 +259,13 @@ __global__ void calculateRestPosStiffnessWithMesh_part(
 // 优化：618ms->53ms
 __global__ void calculateRestPosStiffnessWithMesh(float* ballPos, unsigned char* toolCollideFlag, float* positions, unsigned char* isCollide, float* meshStiffness, int toolNum, int vertexNum) 
 {
-	unsigned int threadid = blockIdx.x * blockDim.x + threadIdx.x;
+	const int threadid = blockIdx.x * blockDim.x + threadIdx.x;
 	if (threadid >= vertexNum) return;
 
 	float maxStiffness = 50000, distance = 1e9 + 7;//计算顶点到两个工具最近的距离
-	int indexX = threadid * 3;
-	int indexY = threadid * 3 + 1;
-	int indexZ = threadid * 3 + 2;
+	const int indexX = threadid * 3;
+	const int indexY = threadid * 3 + 1;
+	const int indexZ = threadid * 3 + 2;
 	for (int i = 0; i < toolNum; i++)
 	{
 		float p[3] = { positions[indexX], positions[indexY], positions[indexZ] };
@@ -300,7 +300,7 @@ __global__ void calculateRestPosStiffnessWithMesh(float* ballPos, unsigned char*
 }
 // 优化：算法简化，748ms->266ms
 __global__ void calculateRestPos(float* positions, float* rest_positions, float* force, float* collisionDiag, float* restStiffness, int vertexNum) {
-	unsigned int threadid = blockIdx.x * blockDim.x + threadIdx.x;
+	const int threadid = blockIdx.x * blockDim.x + threadIdx.x;
 	if (threadid >= vertexNum) return;
 
 	const int offset = threadid * 3;
@@ -317,17 +317,17 @@ __global__ void calculateRestPos(float* positions, float* rest_positions, float*
 __global__ void calculateRestPos_part(float* positions, float* rest_positions, float* force, float* collisionDiag, float* restStiffness, 
 	int* sortedTetVertIndices, int offset, int activeElement)
 {
-	unsigned int threadid = blockIdx.x * blockDim.x + threadIdx.x;
+	const int threadid = blockIdx.x * blockDim.x + threadIdx.x;
 	if (threadid > activeElement) return;
 
 	int tetVertIdx = sortedTetVertIndices[threadid+offset];
 
 	//计算受力
-	float tempx = rest_positions[3 * tetVertIdx + 0] - positions[3 * tetVertIdx + 0];
-	float tempy = rest_positions[3 * tetVertIdx + 1] - positions[3 * tetVertIdx + 1];
-	float tempz = rest_positions[3 * tetVertIdx + 2] - positions[3 * tetVertIdx + 2];
+	const float tempx = rest_positions[3 * tetVertIdx + 0] - positions[3 * tetVertIdx + 0];
+	const float tempy = rest_positions[3 * tetVertIdx + 1] - positions[3 * tetVertIdx + 1];
+	const float tempz = rest_positions[3 * tetVertIdx + 2] - positions[3 * tetVertIdx + 2];
 
-	float restStiffness_tetVertIdx = restStiffness[tetVertIdx];
+	const float restStiffness_tetVertIdx = restStiffness[tetVertIdx];
 	atomicAdd(force + tetVertIdx * 3 + 0, tempx * restStiffness_tetVertIdx);
 	atomicAdd(force + tetVertIdx * 3 + 1, tempy * restStiffness_tetVertIdx);
 	atomicAdd(force + tetVertIdx * 3 + 2, tempz * restStiffness_tetVertIdx);
@@ -347,14 +347,14 @@ __device__ void MatrixSubstract_3_D(float* A, float* B, float* R)						//R=A-B
 __device__ __inline__ void MatrixProduct_3_D(const float* A, const float* B, float* R)				//R=A*B
 {
 	// Load A into registers (row-wise)
-	float a0 = A[0], a1 = A[1], a2 = A[2];
-	float a3 = A[3], a4 = A[4], a5 = A[5];
-	float a6 = A[6], a7 = A[7], a8 = A[8];
+	const float a0 = A[0], a1 = A[1], a2 = A[2];
+	const float a3 = A[3], a4 = A[4], a5 = A[5];
+	const float a6 = A[6], a7 = A[7], a8 = A[8];
 
 	// Load B into registers (column-wise)
-	float b0 = B[0], b3 = B[3], b6 = B[6]; // Column 0
-	float b1 = B[1], b4 = B[4], b7 = B[7]; // Column 1
-	float b2 = B[2], b5 = B[5], b8 = B[8]; // Column 2
+	const float b0 = B[0], b3 = B[3], b6 = B[6]; // Column 0
+	const float b1 = B[1], b4 = B[4], b7 = B[7]; // Column 1
+	const float b2 = B[2], b5 = B[5], b8 = B[8]; // Column 2
 
 	// Compute R = A * B (row-wise multiplication)
 	R[0] = a0 * b0 + a1 * b3 + a2 * b6;
@@ -371,13 +371,13 @@ __device__ __inline__ void MatrixProduct_3_D(const float* A, const float* B, flo
 __device__ __inline__ void MatrixProduct_3x3x4(const float* A, const float* B, float* R)				//R=A*B
 {
 	// 1. 显式加载 A 的所有元素到寄存器（3x3 矩阵）
-	float a00 = A[0], a01 = A[1], a02 = A[2];
-	float a10 = A[3], a11 = A[4], a12 = A[5];
-	float a20 = A[6], a21 = A[7], a22 = A[8];
+	const float a00 = A[0], a01 = A[1], a02 = A[2];
+	const float a10 = A[3], a11 = A[4], a12 = A[5];
+	const float a20 = A[6], a21 = A[7], a22 = A[8];
 	// 2. 显式加载 B 的所有元素到寄存器（3x4 矩阵）
-	float b00 = B[0], b01 = B[1], b02 = B[2], b03 = B[3];
-	float b10 = B[4], b11 = B[5], b12 = B[6], b13 = B[7];
-	float b20 = B[8], b21 = B[9], b22 = B[10], b23 = B[11];
+	const float b00 = B[0], b01 = B[1], b02 = B[2], b03 = B[3];
+	const float b10 = B[4], b11 = B[5], b12 = B[6], b13 = B[7];
+	const float b20 = B[8], b21 = B[9], b22 = B[10], b23 = B[11];
 	// 3. 初始化 R 为 0
 	for (int i = 0; i < 12; ++i) {
 		R[i] = 0.0f;
@@ -414,7 +414,7 @@ __global__ void calculateIF(float* positions, int* tetIndex,
 	float* force, float* tetVolumn, bool* active,
 	int tetNum, float* volumnStiffness)
 {
-	unsigned int threadid = blockIdx.x * blockDim.x + threadIdx.x;
+	const int threadid = blockIdx.x * blockDim.x + threadIdx.x;
 	// 优化：合并if判断
 	if (threadid >= tetNum || !active[threadid]) return;
 
@@ -422,17 +422,18 @@ __global__ void calculateIF(float* positions, int* tetIndex,
 	//volumnStiffness = tetStiffness_d[threadid];
 
 	//计算每个四面体初始化的shape矩阵的逆
-	int vIndex0 = tetIndex[threadid * 4];
-	int vIndex1 = tetIndex[threadid * 4 + 1];
-	int vIndex2 = tetIndex[threadid * 4 + 2];
-	int vIndex3 = tetIndex[threadid * 4 + 3];
-	int vIndex00 = vIndex0 * 3, vIndex01 = vIndex0 * 3 + 1, vIndex02 = vIndex0 * 3 + 2;
-	int vIndex10 = vIndex1 * 3, vIndex11 = vIndex1 * 3 + 1, vIndex12 = vIndex1 * 3 + 2;
-	int vIndex20 = vIndex2 * 3, vIndex21 = vIndex2 * 3 + 1, vIndex22 = vIndex2 * 3 + 2;
-	int vIndex30 = vIndex3 * 3, vIndex31 = vIndex3 * 3 + 1, vIndex32 = vIndex3 * 3 + 2;
+	const int vIndex0 = tetIndex[threadid * 4];
+	const int vIndex1 = tetIndex[threadid * 4 + 1];
+	const int vIndex2 = tetIndex[threadid * 4 + 2];
+	const int vIndex3 = tetIndex[threadid * 4 + 3];
+
+	const int vIndex00 = vIndex0 * 3, vIndex01 = vIndex0 * 3 + 1, vIndex02 = vIndex0 * 3 + 2;
+	const int vIndex10 = vIndex1 * 3, vIndex11 = vIndex1 * 3 + 1, vIndex12 = vIndex1 * 3 + 2;
+	const int vIndex20 = vIndex2 * 3, vIndex21 = vIndex2 * 3 + 1, vIndex22 = vIndex2 * 3 + 2;
+	const int vIndex30 = vIndex3 * 3, vIndex31 = vIndex3 * 3 + 1, vIndex32 = vIndex3 * 3 + 2;
 	//先计算shape矩阵
-	float pos00 = positions[vIndex00], pos01 = positions[vIndex01], pos02 = positions[vIndex02];
-	float D[9] = {
+	const float pos00 = positions[vIndex00], pos01 = positions[vIndex01], pos02 = positions[vIndex02];
+	const float D[9] = {
 		positions[vIndex10] - pos00, positions[vIndex20] - pos00, positions[vIndex30] - pos00,
 		positions[vIndex11] - pos01, positions[vIndex21] - pos01, positions[vIndex31] - pos01,
 		positions[vIndex12] - pos02, positions[vIndex22] - pos02, positions[vIndex32] - pos02
@@ -441,12 +442,12 @@ __global__ void calculateIF(float* positions, int* tetIndex,
 	float F[9], R[9], temp[12], *B = &tetInvD3x3[threadid * 9];
 	MatrixProduct_3_D(D, &tetInvD3x3[threadid * 9], F);
 	//从F中分解出R（直接搬运，这个算法太复杂了）
-	//GetRotation_D((float(*)[3])F, (float(*)[3])R);//转化为数组指针，即对应二维数组的形参要求
+	GetRotation_D((float(*)[3])F, (float(*)[3])R);//转化为数组指针，即对应二维数组的形参要求
 	MatrixSubstract_3_D(R, F, R);
 	MatrixProduct_3x3x4(R, &tetInvD3x4[threadid * 12], temp);
 	//对应的四个点的xyz分量
 	//这里应该需要原子操作
-	float tetVolumn_volumnStiffness = tetVolumn[threadid] * volumnStiffness[threadid];
+	const float tetVolumn_volumnStiffness = tetVolumn[threadid] * volumnStiffness[threadid];
 	atomicAdd(&force[vIndex00], temp[0] * tetVolumn_volumnStiffness);
 	atomicAdd(&force[vIndex01], temp[4] * tetVolumn_volumnStiffness);
 	atomicAdd(&force[vIndex02], temp[8] * tetVolumn_volumnStiffness);
@@ -590,7 +591,7 @@ __global__ void calculateIF_part(float* positions, int* tetIndex,
 }
 int runcalculateRestPosForceWithMeshPos(float toolRadius)
 {
-	int threadNum = 512;
+	int threadNum = 128;
 	int blockNum = (tetVertNum_d + threadNum - 1) / threadNum;
 
 	calculateRestPosStiffnessWithMesh << <blockNum, threadNum >> > (
@@ -750,7 +751,7 @@ __global__ void calculatePOS(float* positions, float* force, float* fixed, float
 
 //计算更新位置
 int runcalculatePOS(float omega, float dt) {
-	int  threadNum = 512;
+	int  threadNum = 128;
 
 	int blockNum = (tetVertNum_d + threadNum - 1) / threadNum;
 	//并行计算
@@ -865,7 +866,7 @@ __global__ void calculatePOS(float* positions, float* force, float* fixed, float
 }
 
 int runcalculateV(float dt) {
-	int  threadNum = 512;
+	int  threadNum = 128;
 	int blockNum = (tetVertNum_d + threadNum - 1) / threadNum;
 	//并行计算
 	calculateV << <blockNum, threadNum >> > (tetVertPos_d, tetVertVelocity_d, tetVertPos_last_d, tetVertNum_d, dt);
@@ -896,7 +897,7 @@ __global__ void calculateV(float* positions, float* velocity, float* last_positi
 }
 int runUpdateInnerTetVertDDir()
 {
-	int threadNum = 512;
+	int threadNum = 128;
 	int blockNum = (tetVertNum_d + threadNum - 1) / threadNum;
 
 	updateInnerTetVertDirectDirection << <blockNum, threadNum >> > (tetVertPos_d,
@@ -908,7 +909,7 @@ int runUpdateInnerTetVertDDir()
 }
 int runUpdateSurfaceTetVertDDir()
 {
-	int threadNum = 512;
+	int threadNum = 128;
 	int blockNum = (triVertOrgNum_d + threadNum - 1) / threadNum;
 	updateSurfaceTetVertDirectDirection << <blockNum, threadNum >> > (
 		onSurfaceTetVertIndices_d,
@@ -921,7 +922,7 @@ int runUpdateSurfaceTetVertDDir()
 }
 int runNormalizeDDir()
 {
-	int threadNum = 512;
+	int threadNum = 128;
 	int blockNum = (tetVertNum_d + threadNum - 1) / threadNum;
 	normalizeDDir << <blockNum, threadNum >> > (tetVertNonPenetrationDir_d, tetVertNum_d);
 	printCudaError("NormalizeTetVertDDir");

@@ -371,6 +371,9 @@
       <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
       <FastMath>true</FastMath>
       <Optimization>O3</Optimization>
+      <MaxRegCount>
+      </MaxRegCount>
+      <SplitCompile>MaxThreads</SplitCompile>
     </CudaCompile>
     <CudaLink>
       <Optimization>O3</Optimization>

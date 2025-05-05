@@ -12,18 +12,18 @@ __device__ float l2len(float* v0, float* v1)
 //更新mesh顶点法线
 extern "C" int runUpdateMeshNormalMU() {
 
-	int threadNum = 512;
+	int threadNum = 128;
 	int blockNum = (triVertNum_d + threadNum - 1) / threadNum;
 	//清除顶点法线信息，重新计算
 	clearNormalMU << <blockNum, threadNum >> > (triVertNorm_d, triVertNormAccu_d, triVertNum_d);
 
-	threadNum = 512;
+	threadNum = 128;
 	blockNum = (triNum_d + threadNum - 1) / threadNum;
 	updateMeshNormalMU << <blockNum, threadNum >> > (triVertPos_d, triVertNorm_d, triVertNormAccu_d, triIndex_d, triNum_d);
 	cudaDeviceSynchronize();
 	printCudaError("updateMeshNormalMU");
 
-	threadNum = 512;
+	threadNum = 128;
 	blockNum = (triVertNum_d + threadNum - 1) / threadNum;
 	normalizeMeshtriVertNorm_debug << <blockNum, threadNum >> > (triVertNorm_d, triVertPos_d, triVertNormAccu_d, triVertNum_d);
 
@@ -316,7 +316,7 @@ __global__ void normalizeMeshtriVertNorm_debug(float* meshNormal, float* meshPos
 int setDDirwithNormal()
 {
 	cudaMemcpy(triVertNonPenetrationDir_d, triVertNorm_d, triVertNum_d * 3 * sizeof(float), cudaMemcpyDeviceToDevice);
-	int threadNum = 512;
+	int threadNum = 128;
 	int blockNum = (triVertNum_d + threadNum - 1) / threadNum;
 
 	setNonPenetrationDirWithTriVertNormal << <blockNum, threadNum >> > (triVertNonPenetrationDir_d, triVertNorm_d, triVertNum_d);

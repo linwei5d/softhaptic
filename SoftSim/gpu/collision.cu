@@ -110,7 +110,7 @@ int runcalculateToolShift(float halfLength, float radius, int cylinderIdx) {
 		break;
 	case normal: 
 		{
-			int  threadNum = 512;
+			int  threadNum = 128;
 			int blockNum = (tetVertNum_d + threadNum - 1) / threadNum;
 			//写入偏移向量中
 			calculateToolShift << <blockNum, threadNum >> > (
@@ -149,7 +149,7 @@ int runcalculateToolShiftMU(float halfLength, float radius, int cylinderIdx) {
 		break;
 	case normal:
 	{
-		int  threadNum = 512;
+		int  threadNum = 128;
 		int blockNum = (triVertNum_d + threadNum - 1) / threadNum;
 		//写入偏移向量中
 		calculateToolShift << <blockNum, threadNum >> > (
@@ -218,7 +218,7 @@ int runcalculateCollisionCylinder(float halfLength, float radius,
 	cylinderCollideFlag = &toolCollideFlag_d[idx];
 
 	///此处增加与圆柱体的碰撞
-	int  threadNum = 512;
+	int  threadNum = 128;
 	int blockNum = (tetVertNum_d + threadNum - 1) / threadNum;
 
 	calculateCollisionCylinderSDF << <blockNum, threadNum >> > (
@@ -244,7 +244,7 @@ int runcalculateCollisionCylinderMU(float halfLength, float radius,
 	cylinderV = &cylinderV_d[idx * 3];
 	cylinderCollideFlag = &toolCollideFlag_d[idx];
 
-	int  threadNum = 512;
+	int  threadNum = 128;
 	int blockNum = (triVertNum_d + threadNum - 1) / threadNum;
 
 	calculateCollisionCylinderSDF << <blockNum, threadNum >> > (
@@ -853,7 +853,7 @@ __global__ void calculateCollisionCylinderAdvance(
 
 int runcalculateCollisionSphere(float ball_radius, float p_collisionStiffness, int toolIdx, bool useClusterCollision)
 {
-	int  threadNum = 512;
+	int  threadNum = 128;
 	int blockNum = (tetVertNum_d + threadNum - 1) / threadNum;
 
 	// 生成的碰撞力与球心到“顶点在球面上的指导向量投影点”的方向一致。
@@ -880,7 +880,7 @@ int runcalculateCollisionSphere(float ball_radius, float p_collisionStiffness, i
 
 int runcalculateCollisionSphereMU(float ball_radius, float collisionStiffness, int toolIdx)
 {
-	int  threadNum = 512;
+	int  threadNum = 128;
 	int blockNum = (triVertNum_d + threadNum - 1) / threadNum;
 
 	calculateCollisionSphere << <blockNum, threadNum >> > (toolPositionAndDirection_d, ball_radius,
@@ -1011,7 +1011,7 @@ int runClearFc()
 }
 int runHapticCollisionSphereForTri(float toolR, float p_collisionStiffness, float kc, int toolIdx)
 {
-	int  threadNum = 512;
+	int  threadNum = 128;
 	int blockNum = (triVertNum_d + threadNum - 1) / threadNum;
 
 	hapticCollisionSphere <<<blockNum, threadNum>>>(toolPositionAndDirection_d, toolR,
@@ -1027,7 +1027,7 @@ int runHapticCollisionSphereForTri(float toolR, float p_collisionStiffness, floa
 }
 int runHapticCollisionSphereForTet(float toolR, float p_collisionStiffness, float kc, int toolIdx)
 {
-	int  threadNum = 512;
+	int  threadNum = 128;
 	int blockNum = (tetVertNum_d + threadNum - 1) / threadNum;
 
 	hapticCollisionSphere << <blockNum, threadNum >> > (toolPositionAndDirection_d, toolR,
@@ -1178,7 +1178,7 @@ __global__ void hapticCollisionSphere(float* ballPos, float radius,
 
 int runHapticCollisionSphere_Merged(float toolR, float p_collisionStiffness, float kc, int toolIdx)
 {
-	int  threadNum = 512;
+	int  threadNum = 128;
 	int blockNum = (triVertNum_d + threadNum - 1) / threadNum;
 
 	//hapticCollisionSphere_Merge<< <blockNum, threadNum >> > (toolPositionAndDirection_d, toolR,
@@ -1210,7 +1210,7 @@ int runHapticCollisionSphere_Merged(float toolR, float p_collisionStiffness, flo
 
 int runHapticCollisionCylinder_Merged(float toolR, float param_toolLength, float p_collisionStiffness, float kc, int toolIdx)
 {
-	int  threadNum = 512;
+	int  threadNum = 128;
 	int blockNum = (triVertNum_d + threadNum - 1) / threadNum;
 
 	float frictionStiffness = 10;
@@ -1355,7 +1355,7 @@ __global__ void hapticCollisionCylinder_Merge(
 }
 int runDeviceCalculateContact(float k_c)
 {
-	int  threadNum = 512;
+	int  threadNum = 128;
 	int blockNum = (triVertNum_d + threadNum - 1) / threadNum;
 	
 	CalculateContact<< <blockNum, threadNum >> > (triVertNonPenetrationDir_d, triVertPos_d,
