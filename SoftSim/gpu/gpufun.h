@@ -461,6 +461,9 @@ __device__ bool cylinderCollisionContinue_without_directDir(
 
 
 //º∆À„position
+__global__ void calculateRestPosCombined(float* ballPos, unsigned char* toolCollideFlag, float* positions,
+	unsigned char* isCollide, float* rest_positions, float* force,
+	float* collisionDiag, float* restStiffness, int toolNum, int vertexNum);
 __global__ void calculatePOS(float* positions, float* force, float* fixed, float* mass,
 	float* next_positions, float* prev_positions, float* old_positions,
 	float* volumnDiag, float* collisionDiag, float* collisionForce,

@@ -5,12 +5,12 @@
 extern "C" int runcalculateSTMU(float damping, float dt) {
 
 	//每个block中的线程数
-	int threadNum = 128;
+	int threadNum = 64;
 	int blockNum = (triVertNum_d + threadNum - 1) / threadNum;
 	calculateSTMU << <blockNum, threadNum >> > (triVertPos_d, triVertPos_old_d, triVertPos_prev_d, triVertVelocity_d, triVertExternForce_d, 
 		triVertFixed_d, triVertNum_d, gravityX_d, gravityY_d, gravityZ_d, damping, dt);
 
-	cudaDeviceSynchronize();
+	//cudaDeviceSynchronize();
 	printCudaError("runcalculateSTMU");
 	return 0;
 }
@@ -20,40 +20,34 @@ __global__ void calculateSTMU(float* positions, float* old_positions, float* pre
 	float* externForce, float* fixed, int vertexNum, float gravityX, float gravityY, float gravityZ, float damping, float dt) {
 	unsigned int threadid = blockIdx.x * blockDim.x + threadIdx.x;
 	if (threadid >= vertexNum) return;
-	int indexX = threadid * 3 + 0;
-	int indexY = threadid * 3 + 1;
-	int indexZ = threadid * 3 + 2;
-	float fixflag = fixed[threadid] > 1e8 ? 0 : 1;
-	//运动的阻尼
-	velocity[indexX] *= damping * fixflag;
-	velocity[indexY] *= damping * fixflag;
-	velocity[indexZ] *= damping * fixflag;
-	//施加重力
-	velocity[indexX] += gravityX * dt * fixflag;
-	velocity[indexY] += gravityY * dt * fixflag;
-	velocity[indexZ] += gravityZ * dt * fixflag;
-	//施加其他外力
-	velocity[indexX] += externForce[indexX] * dt * fixflag;
-	velocity[indexY] += externForce[indexY] * dt * fixflag;
-	velocity[indexZ] += externForce[indexZ] * dt * fixflag;
 
-	positions[indexX] += velocity[indexX] * dt * fixflag;
-	positions[indexY] += velocity[indexY] * dt * fixflag;
-	positions[indexZ] += velocity[indexZ] * dt * fixflag;
+	const int indexX = threadid * 3;
+	const int indexY = threadid * 3 + 1;
+	const int indexZ = threadid * 3 + 2;
 
+	float positionsX = positions[indexX];
+	float positionsY = positions[indexY];
+	float positionsZ = positions[indexZ];
 
-	//st
-	old_positions[indexX] = positions[indexX];
-	old_positions[indexY] = positions[indexY];
-	old_positions[indexZ] = positions[indexZ];
-	prev_positions[indexX] = positions[indexX];
-	prev_positions[indexY] = positions[indexY];
-	prev_positions[indexZ] = positions[indexZ];
+	float fixflag = fixed[threadid] < 1e8f ? 1 : 0;
+	float velocityX = velocity[indexX];
+	float velocityY = velocity[indexY];
+	float velocityZ = velocity[indexZ];
+	velocityX = (velocityX * damping + dt * (gravityX + externForce[indexX])) * fixflag;
+	velocityY = (velocityY * damping + dt * (gravityY + externForce[indexY])) * fixflag;
+	velocityZ = (velocityZ * damping + dt * (gravityZ + externForce[indexZ])) * fixflag;
 
-	//外力清零
-	externForce[indexX] = 0;
-	externForce[indexY] = 0;
-	externForce[indexZ] = 0;
+	velocity[indexX] = velocityX;
+	velocity[indexY] = velocityY;
+	velocity[indexZ] = velocityZ;
+	// 更新位置
+	// st
+	prev_positions[indexX] = old_positions[indexX] = positions[indexX] = positionsX + velocityX * dt;
+	prev_positions[indexY] = old_positions[indexY] = positions[indexY] = positionsY + velocityY * dt;
+	prev_positions[indexZ] = old_positions[indexZ] = positions[indexZ] = positionsZ + velocityZ * dt;
+
+	// 外力清零
+	externForce[indexX] = externForce[indexY] = externForce[indexZ] = 0.0f;
 }
 
 
