@@ -147,8 +147,11 @@ int runcalculateIF() {
 		tetVertForce_d, tetVolume_d, tetActive_d,
 		tetNum_d, tetStiffness_d);
 
+	cudaStream_t stream;
+	cudaStreamCreate(&stream);
 	blockNum = (tetVertNum_d + threadNum - 1) / threadNum;
-	calculateVec3Len << <blockNum, threadNum >> > (tetVertForce_d, tetVertForceLen_d, tetVertNum_d);
+	calculateVec3Len << <blockNum, threadNum, 0, stream>> > (tetVertForce_d, tetVertForceLen_d, tetVertNum_d);
+	cudaStreamDestroy(stream);
 	//cudaDeviceSynchronize();
 	printCudaError("runcalculateIF");
 	return 0;
