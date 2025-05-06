@@ -10,7 +10,7 @@ extern "C" int runcalculateSTMU(float damping, float dt) {
 	calculateSTMU << <blockNum, threadNum >> > (triVertPos_d, triVertPos_old_d, triVertPos_prev_d, triVertVelocity_d, triVertExternForce_d, 
 		triVertFixed_d, triVertNum_d, gravityX_d, gravityY_d, gravityZ_d, damping, dt);
 
-	//cudaDeviceSynchronize();
+	////cudaDeviceSynchronize();
 	printCudaError("runcalculateSTMU");
 	return 0;
 }
@@ -71,7 +71,7 @@ extern "C" int runcalculateIFMU() {
 		triEdgeStiffness_d, triEdgeOrgLength_d, triEdgeIndex_d, //spring number
 		triVertFixed_d,
 		triEdgeNum_d);
-	cudaDeviceSynchronize();
+	//cudaDeviceSynchronize();
 	printCudaError("runcalculateIFMU");
 	return 0;
 }
@@ -212,7 +212,7 @@ int runcalculateRestPosForceWithTetPos(float toolRadius)
 		triVertForce_d, triVertCollisionDiag_d,
 		tetVertPos_d, triVertfromTetStiffness_d,
 		triVertNum_d);
-	cudaDeviceSynchronize();
+	//cudaDeviceSynchronize();
 	printCudaError("runcalculateRestPosForceWithTetPos");
 	return 0;
 }
@@ -476,7 +476,7 @@ int runcalculateRestPosMU() {
 		tetVertCollisionForce_d, tetVertCollisionDiag_d,
 		tetVertRestStiffness_d, tetVertNum_d);
 
-	cudaDeviceSynchronize();
+	//cudaDeviceSynchronize();
 	printCudaError("runcalculateRestPos");
 	return 0;
 }
@@ -494,7 +494,7 @@ extern "C" int runcalculatePosMU(float omega, float dt) {
 		triEdgeDiag_d, triVertCollisionDiag_d, triVertCollisionForce_d,
 		triVertNum_d, dt, omega);
 
-	cudaDeviceSynchronize();
+	//cudaDeviceSynchronize();
 	printCudaError("runcalculatePosMU");
 	return 0;
 }

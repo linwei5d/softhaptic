@@ -119,7 +119,7 @@ int runcalculateToolShift(float halfLength, float radius, int cylinderIdx) {
 				halfLength, radius, 
 				tetVertPos_d, cylinderShift, tetVertNum_d);
 
-			cudaDeviceSynchronize();
+			//cudaDeviceSynchronize();
 		}
 		break;
 	default:
@@ -158,7 +158,7 @@ int runcalculateToolShiftMU(float halfLength, float radius, int cylinderIdx) {
 			halfLength, radius,
 			triVertPos_d, cylinderShift, triVertNum_d);
 
-		cudaDeviceSynchronize();
+		//cudaDeviceSynchronize();
 	}
 	break;
 	default:
@@ -229,7 +229,7 @@ int runcalculateCollisionCylinder(float halfLength, float radius,
 		tetVertNum_d,
 		collisionStiffness, tetVertCollisionForce_d, tetVertNonPenetrationDir_d, cylinderShift);
 
-	cudaDeviceSynchronize();
+	//cudaDeviceSynchronize();
 	return 0;
 }
 
@@ -254,7 +254,7 @@ int runcalculateCollisionCylinderMU(float halfLength, float radius,
 		triVertCollisionDiag_d,
 		triVertNum_d,
 		collisionStiffness, triVertCollisionForce_d, triVertNonPenetrationDir_d, cylinderShift);
-	cudaDeviceSynchronize();
+	//cudaDeviceSynchronize();
 	return 0;
 }
 //使用基于SDF的变形体碰撞检测算法
@@ -873,7 +873,7 @@ int runcalculateCollisionSphere(float ball_radius, float p_collisionStiffness, i
 	//	tetVertNum_d);
 
 	calculateVec3Len << <blockNum, threadNum >> > (tetVertCollisionForce_d, tetVertCollisionForceLen_d, tetVertNum_d);
-	cudaDeviceSynchronize();
+	//cudaDeviceSynchronize();
 	printCudaError("runcalculateCollisionSphere");
 	return 0;
 }
@@ -890,7 +890,7 @@ int runcalculateCollisionSphereMU(float ball_radius, float collisionStiffness, i
 		collisionStiffness,
 		triVertNum_d);
 
-	cudaDeviceSynchronize();
+	//cudaDeviceSynchronize();
 	printCudaError("runcalculateCollisionSphereMU");
 	return 0;
 }
@@ -1021,7 +1021,7 @@ int runHapticCollisionSphereForTri(float toolR, float p_collisionStiffness, floa
 		p_collisionStiffness,
 		toolContactDeltaPos_triVert_d, totalFC_d, totalPartial_FC_X_d, kc,
 		hapticCollisionNum_d, triVertNum_d);
-	cudaDeviceSynchronize();
+	//cudaDeviceSynchronize();
 	printCudaError("HapticCollisionSphereForTri");
 	return 0;
 }
@@ -1037,7 +1037,7 @@ int runHapticCollisionSphereForTet(float toolR, float p_collisionStiffness, floa
 		p_collisionStiffness,
 		toolContactDeltaPos_triVert_d, totalFC_d, totalPartial_FC_X_d, kc,
 		hapticCollisionNum_d, tetVertNum_d);
-	cudaDeviceSynchronize();
+	//cudaDeviceSynchronize();
 	printCudaError("HapticCollisionSphereForTet");
 	return 0;
 }
@@ -1203,7 +1203,7 @@ int runHapticCollisionSphere_Merged(float toolR, float p_collisionStiffness, flo
 		totalTC_d, totalPartial_TC_X_d, totalPartial_TC_Omega_d,
 		kc, hapticCollisionNum_d, triVertNum_d);
 
-	cudaDeviceSynchronize();
+	//cudaDeviceSynchronize();
 	printCudaError("HapticCollisionSphereMerged");
 	return 0;
 }
@@ -1225,7 +1225,7 @@ int runHapticCollisionCylinder_Merged(float toolR, float param_toolLength, float
 		triVertNum_d, p_collisionStiffness, frictionStiffness,
 		triVertNonPenetrationDir_d, cylinderShift_d, hapticCollisionNum_d);
 
-	//cudaDeviceSynchronize();
+	////cudaDeviceSynchronize();
 	printCudaError("HapticCollisionCylinderMerged");
 	return 0;
 }
@@ -1365,7 +1365,7 @@ int runDeviceCalculateContact(float k_c)
 		totalTC_d, totalPartial_TC_X_d, totalPartial_TC_Omega_d,
 		k_c);
 	printCudaError("runDeviceCalculateContact");
-	cudaDeviceSynchronize();
+	//cudaDeviceSynchronize();
 	return 0;
 }
 __global__ void CalculateContact(float* nonPenetrationDirection, float* triVertPosition, 

@@ -27,7 +27,7 @@ int runcalculateST(float damping, float dt) {
 		tetVertPos_old_d, tetVertPos_prev_d, tetVertPos_last_d, 
 		tetVertFixed_d, 
 		tetVertNum_d, gravityX_d, gravityY_d, gravityZ_d, damping, dt);
-	cudaDeviceSynchronize();//cuda中核函数的执行都是异步的，加上这一步保证核函数完全执行，或者加上memcpy(cudamemcpy是同步的)
+	//cudaDeviceSynchronize();//cuda中核函数的执行都是异步的，加上这一步保证核函数完全执行，或者加上memcpy(cudamemcpy是同步的)
 	printCudaError("runcalculateST");
 	return 0;
 }
@@ -101,7 +101,7 @@ int runCalculateTetEdgeSpringConstraint()
 		tetVertForce_d,
 		tetSpringStiffness_d, tetSpringOrgLen_d, tetSpringIndex_d,
 		tetSpringNum_d);
-	cudaDeviceSynchronize();
+	//cudaDeviceSynchronize();
 	printCudaError("runCalculateTetEdgeSpringConstraint");
 	return 0;
 }
@@ -149,7 +149,7 @@ int runcalculateIF() {
 
 	blockNum = (tetVertNum_d + threadNum - 1) / threadNum;
 	calculateVec3Len << <blockNum, threadNum >> > (tetVertForce_d, tetVertForceLen_d, tetVertNum_d);
-	cudaDeviceSynchronize();
+	//cudaDeviceSynchronize();
 	printCudaError("runcalculateIF");
 	return 0;
 }
@@ -178,7 +178,7 @@ int runcalculateRestPos() {
 	//	tetVertNum_d                  // vertexNum
 	//);
 
-	cudaDeviceSynchronize();
+	//cudaDeviceSynchronize();
 	printCudaError("runcalculateRestPos");
 	return 0;
  }
@@ -674,7 +674,7 @@ int runcalculateRestPosForceWithMeshPos(float toolRadius)
 		tetVertPos_d, tetVertRestPos_d,
 		tetVertCollisionForce_d, tetVertCollisionDiag_d,
 		tetVertfromTriStiffness_d, tetVertNum_d);
-	cudaDeviceSynchronize();
+	//cudaDeviceSynchronize();
 	printCudaError("runcalculateRestPosForceWithMeshPos");
 	return 0;
 }
@@ -784,7 +784,7 @@ int runcalculatePOS(float omega, float dt) {
 		tetVertPos_next_d, tetVertPos_prev_d, tetVertPos_old_d,
 		tetVolumeDiag_d, tetVertCollisionDiag_d, tetVertCollisionForce_d,
 		tetVertNum_d, dt, omega);
-	cudaDeviceSynchronize();
+	//cudaDeviceSynchronize();
 	printCudaError("runcalculatePOS");
 	return 0;
 }
@@ -850,7 +850,7 @@ int runcalculateV(float dt) {
 	//并行计算
 	calculateV << <blockNum, threadNum >> > (tetVertPos_d, tetVertVelocity_d, tetVertPos_last_d, tetVertNum_d, dt);
 
-	cudaDeviceSynchronize();
+	//cudaDeviceSynchronize();
 	printCudaError("runcalculateV");
 	return 0;
 
@@ -911,10 +911,10 @@ int runUpdateTetVertDirectDirection()
 {
 	runUpdateInnerTetVertDDir();
 	runUpdateSurfaceTetVertDDir();
-	cudaDeviceSynchronize();
+	//cudaDeviceSynchronize();
 
 	runNormalizeDDir();
-	cudaDeviceSynchronize();
+	//cudaDeviceSynchronize();
 	printCudaError("UpdateTetVertDirectDirection");
 	return 0;
 }

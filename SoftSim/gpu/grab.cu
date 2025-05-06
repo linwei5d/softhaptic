@@ -94,13 +94,13 @@ extern "C" int runcalculateCollisionCylinderMU(
 			//printf("mesh grab\n");
 			//计算被夹取的区域的顶点																							//控制夹取区域的大小
 			calculateGrabCylinderMU << <blockNum, threadNum >> > (cylinderPosMU, cylinderDirZMU, cylinderDirYMU, cylinderDirXMU, 0.5, 1.0, 2.2, triVertPos_d, isGrapMU, isGrapHalfMU, triVertNum_d, relativePositionMU);
-			//cudaDeviceSynchronize();
+			////cudaDeviceSynchronize();
 			*firstGrab = false;
 		}
 
 		if (timer < timeTop) { //夹取的中间过程，还没有夹住
 			calculateGrabForceMU << <blockNum, threadNum >> > (cylinderPosMU, grapperUpDirZMU, grapperUpDirYMU, grapperUpDirXMU, 0.5, 0.5, 2.2, triVertPos_d, isGrapHalfMU, triVertNum_d, adsorbStiffness, triVertForce_d, triVertCollisionDiag_d, 1);
-			//cudaDeviceSynchronize();
+			////cudaDeviceSynchronize();
 			calculateGrabForceMU << <blockNum, threadNum >> > (cylinderPosMU, grapperDownDirZMU, grapperDownDirYMU, grapperDownDirXMU, 0.5, 0.5, 2.2, triVertPos_d, isGrapHalfMU, triVertNum_d, adsorbStiffness, triVertForce_d, triVertCollisionDiag_d, 2);
 		}
 		else { //如果完全夹住
@@ -110,7 +110,7 @@ extern "C" int runcalculateCollisionCylinderMU(
 			mergeCollideMU << <blockNum, threadNum >> > (triVertisCollide_d, collideFlag, isGrapMU, triVertNum_d);
 		}
 
-		cudaDeviceSynchronize();
+		//cudaDeviceSynchronize();
 		break;
 	}
 	case normal: {
@@ -122,7 +122,7 @@ extern "C" int runcalculateCollisionCylinderMU(
 		calculateCollisionCylinderAdvanceMU << <blockNum, threadNum >> > (cylinderLastPosMU, cylinderPosMU, grapperUpDirZMU, 2.0, radius * 0.7, triVertPos_d,  triVertForce_d, triVertisCollide_d, collideFlag, triVertCollisionDiag_d, triVertNum_d, collisionStiffness * 4, triVertCollisionForce_d, directDirectionMU_D, cylinderShiftMU);
 		calculateCollisionCylinderAdvanceMU << <blockNum, threadNum >> > (cylinderLastPosMU, cylinderPosMU, grapperDownDirZMU, 2.0, radius * 0.7, triVertPos_d,  triVertForce_d, triVertisCollide_d, collideFlag, triVertCollisionDiag_d, triVertNum_d, collisionStiffness * 4, triVertCollisionForce_d, directDirectionMU_D, cylinderShiftMU);
 
-		cudaDeviceSynchronize();
+		//cudaDeviceSynchronize();
 	}
 	default:
 		break;
@@ -851,17 +851,17 @@ __global__ void calculateToolShiftMU(float* cylinderPos, float* cylinderDir, flo
 //			//printf("grab\n");
 //			//计算被夹取的区域的顶点																					//控制夹取区域大小
 //			calculateGrabCylinder << <blockNum, threadNum >> > (cylinderPos, cylinderDirZ, cylinderDirY, cylinderDirX, 0.5, 1.0, 2.2, tetVertPos_d, isGrap, isGrapHalf, tetVertNum_d, relativePosition, directIndex_D, sphereGrabFlag);
-//			//cudaDeviceSynchronize();
+//			////cudaDeviceSynchronize();
 //			*firstGrab = false;
 //		}
 //		//calculateGrabOBB << <blockNum, threadNum >> > (grapperUpPos, grapperUpDirZ, grapperUpDirY, grapperUpDirX, grapperDownPos, grapperDownDirZ, grapperDownDirY, grapperDownDirX, 0.48, 0.43, 2.0, tetVertPos_d, tetVertNum_d, CollideFlag_D);
 //		//不进行碰撞检测，而是保留之前的碰撞信息，约束其位置跟着工具运动
-//		//cudaDeviceSynchronize();
+//		////cudaDeviceSynchronize();
 //		//calculateAdsorbForce << <blockNum, threadNum >> > (cylinderPos, cylinderDirX, cylinderDirY, cylinderDirZ, tetVertPos_d, isGrap, tetVertForce_d, tetCollisionDiag_d, relativePosition, tetVertNum_d, adsorbStiffness, CollideFlag_D);
 //
 //		if (timer < timeTop) { //夹取的中间过程，还没有完全夹住
 //			calculateGrabForce << <blockNum, threadNum >> > (cylinderPos, grapperUpDirZ, grapperUpDirY, grapperUpDirX, 0.5, 0.5, 2.2, tetVertPos_d, isGrapHalf, tetVertNum_d, adsorbStiffness, tetVertForce_d, tetVertCollisionDiag_d, 1);
-//			//cudaDeviceSynchronize();
+//			////cudaDeviceSynchronize();
 //			calculateGrabForce << <blockNum, threadNum >> > (cylinderPos, grapperDownDirZ, grapperDownDirY, grapperDownDirX, 0.5, 0.5, 2.2, tetVertPos_d, isGrapHalf, tetVertNum_d, adsorbStiffness, tetVertForce_d, tetVertCollisionDiag_d, 2);
 //		}
 //		else { //如果完全夹住
@@ -873,7 +873,7 @@ __global__ void calculateToolShiftMU(float* cylinderPos, float* cylinderDir, flo
 //		//计算力反馈端的受力，传递给力反馈端
 //		blockNum = (sphereNum_D + threadNum - 1) / threadNum;
 //		//calculateAdsorbForceForHaptic << <blockNum, threadNum >> > (spherePositions_D, sphereConnectStart_D, sphereConnectCount_D, sphereConnect_D, sphereConnectLength_D, sphereGrabFlag, adsorbForce, sphereNum_D);
-//		cudaDeviceSynchronize();
+//		//cudaDeviceSynchronize();
 //		break;
 //	}
 //	case normal: {
@@ -914,7 +914,7 @@ __global__ void calculateToolShiftMU(float* cylinderPos, float* cylinderDir, flo
 //		// -----------------------------------------------------------------------
 //
 //
-//		cudaDeviceSynchronize();
+//		//cudaDeviceSynchronize();
 //
 //		break;
 //	}

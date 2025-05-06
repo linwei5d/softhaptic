@@ -20,14 +20,14 @@ extern "C" int runUpdateMeshNormalMU() {
 	threadNum = 128;
 	blockNum = (triNum_d + threadNum - 1) / threadNum;
 	updateMeshNormalMU << <blockNum, threadNum >> > (triVertPos_d, triVertNorm_d, triVertNormAccu_d, triIndex_d, triNum_d);
-	cudaDeviceSynchronize();
+	//cudaDeviceSynchronize();
 	printCudaError("updateMeshNormalMU");
 
 	threadNum = 128;
 	blockNum = (triVertNum_d + threadNum - 1) / threadNum;
 	normalizeMeshtriVertNorm_debug << <blockNum, threadNum >> > (triVertNorm_d, triVertPos_d, triVertNormAccu_d, triVertNum_d);
 
-	cudaDeviceSynchronize();
+	//cudaDeviceSynchronize();
 	printCudaError("normalizeMeshtriVertNorm");
 	return 0;
 }
@@ -320,7 +320,7 @@ int setDDirwithNormal()
 	int blockNum = (triVertNum_d + threadNum - 1) / threadNum;
 
 	setNonPenetrationDirWithTriVertNormal << <blockNum, threadNum >> > (triVertNonPenetrationDir_d, triVertNorm_d, triVertNum_d);
-	cudaDeviceSynchronize();
+	//cudaDeviceSynchronize();
 	printCudaError("runUpdateDirectDirectionMU");
 	return 0;
 }
