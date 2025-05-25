@@ -417,17 +417,21 @@ __global__ void updateSurfaceTetVertDirectDirection(
 	//printf("SurfaceTetVertDDir: %f %f %f\n", n[0], n[1], n[2]);
 }
 void printCudaError() {
+#ifdef _DEBUG
 	cudaError_t cudaStatus = cudaGetLastError();
 	if (cudaStatus != cudaSuccess)
 	{
 		fprintf(stderr, "error: %s\n", cudaGetErrorString(cudaStatus));
 	}
+#endif
 }
 
 void printCudaError(const char* funcName) {
+#ifdef _DEBUG
 	cudaError_t cudaStatus = cudaGetLastError();
 	if (cudaStatus != cudaSuccess)
 	{
 		fprintf(stderr, "%s error: %s\n", funcName, cudaGetErrorString(cudaStatus));
 	}
+#endif
 }

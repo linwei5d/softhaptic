@@ -353,6 +353,10 @@
       <OpenMPSupport>true</OpenMPSupport>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <EnableVectorLength>VectorLength256</EnableVectorLength>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -373,7 +377,7 @@
       <Optimization>O3</Optimization>
       <MaxRegCount>
       </MaxRegCount>
-      <SplitCompile>Default</SplitCompile>
+      <SplitCompile>MaxThreads</SplitCompile>
     </CudaCompile>
     <CudaLink>
       <Optimization>O3</Optimization>
