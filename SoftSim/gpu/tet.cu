@@ -2,14 +2,14 @@
 #include "gpufun.h"
 
 
-__global__ __inline__ void calculateVec3Len(float* vec, float* len, int vecNum)
+__global__ void calculateVec3Len(float* vec, float* len, int vecNum)
 {
-	unsigned int threadid = blockIdx.x * blockDim.x + threadIdx.x;
+	const int threadid = blockIdx.x * blockDim.x + threadIdx.x;
 	if (threadid >= vecNum) return;
-
-	const float x = vec[threadid * 3];
-	const float y = vec[threadid * 3 + 1];
-	const float z = vec[threadid * 3 + 2];
+	const int id = (blockIdx.x * blockDim.x + threadIdx.x) * 3;
+	const float x = vec[id];
+	const float y = vec[id + 1];
+	const float z = vec[id + 2];
 	// 优化：使用单精度
 	len[threadid] = sqrtf(x * x + y * y + z * z);
 }
@@ -139,7 +139,7 @@ __global__ void calculateTetEdgeSpringConstraint(
 
 int runcalculateIF() {
 	// 优化：低threadNum
-	int  threadNum = 32;
+	int threadNum = 32;
 	int blockNum = (tetNum_d + threadNum - 1) / threadNum;
 	//并行计算
 	calculateIF << <blockNum, threadNum >> > (tetVertPos_d, tetIndex_d,
@@ -147,11 +147,8 @@ int runcalculateIF() {
 		tetVertForce_d, tetVolume_d, tetActive_d,
 		tetNum_d, tetStiffness_d);
 
-	cudaStream_t stream;
-	cudaStreamCreate(&stream);
 	blockNum = (tetVertNum_d + threadNum - 1) / threadNum;
-	calculateVec3Len << <blockNum, threadNum, 0, stream>> > (tetVertForce_d, tetVertForceLen_d, tetVertNum_d);
-	cudaStreamDestroy(stream);
+	calculateVec3Len << <blockNum, threadNum >> > (tetVertForce_d, tetVertForceLen_d, tetVertNum_d);
 	//cudaDeviceSynchronize();
 	printCudaError("runcalculateIF");
 	return 0;
@@ -412,14 +409,14 @@ __global__ void calculateRestPos_part(float* positions, float* rest_positions, f
 	atomicAdd(collisionDiag + tetVertIdx * 3 + 2, restStiffness_tetVertIdx);
 }
 // 优化：循环展开，223ms->69ms
-__device__ void MatrixSubstract_3_D(float* A, float* B, float* R)						//R=A-B
+__device__ __inline__ void MatrixSubstract_3_D(float* A, float* B, float* R)						//R=A-B
 {
 	R[0] = A[0] - B[0];R[1] = A[1] - B[1];R[2] = A[2] - B[2];
 	R[3] = A[3] - B[3];R[4] = A[4] - B[4];R[5] = A[5] - B[5];
 	R[6] = A[6] - B[6];R[7] = A[7] - B[7];R[8] = A[8] - B[8];
 }
 // 优化：加载进寄存器，216ms->54ms
-__device__ void MatrixProduct_3_D(const float* A, const float* B, float* R)				//R=A*B
+__device__ __inline__ void MatrixProduct_3_D(const float* A, const float* B, float* R)				//R=A*B
 {
 	// Load A into registers (row-wise)
 	const float a0 = A[0], a1 = A[1], a2 = A[2];
@@ -443,7 +440,7 @@ __device__ void MatrixProduct_3_D(const float* A, const float* B, float* R)				/
 	R[8] = a6 * b2 + a7 * b5 + a8 * b8;
 }
 // 优化：加载进寄存器
-__device__ void MatrixProduct_3x3x4(const float* A, const float* B, float* R)				//R=A*B
+__device__ __inline__ void MatrixProduct_3x3x4(const float* A, const float* B, float* R)				//R=A*B
 {
 	// 1. 显式加载 A 的所有元素到寄存器（3x3 矩阵）
 	const float a00 = A[0], a01 = A[1], a02 = A[2];
@@ -489,19 +486,15 @@ __global__ void calculateIF(float* positions, int* tetIndex,
 	// 优化：合并if判断
 	if (threadid >= tetNum || !active[threadid]) return;
 
-	//获取当前四面体的变形系数
-	//volumnStiffness = tetStiffness_d[threadid];
-
 	//计算每个四面体初始化的shape矩阵的逆
 	const int vIndex0 = tetIndex[threadid * 4];
 	const int vIndex1 = tetIndex[threadid * 4 + 1];
 	const int vIndex2 = tetIndex[threadid * 4 + 2];
 	const int vIndex3 = tetIndex[threadid * 4 + 3];
 
-	const int vIndex00 = vIndex0 * 3, vIndex01 = vIndex0 * 3 + 1, vIndex02 = vIndex0 * 3 + 2;
-	const int vIndex10 = vIndex1 * 3, vIndex11 = vIndex1 * 3 + 1, vIndex12 = vIndex1 * 3 + 2;
-	const int vIndex20 = vIndex2 * 3, vIndex21 = vIndex2 * 3 + 1, vIndex22 = vIndex2 * 3 + 2;
-	const int vIndex30 = vIndex3 * 3, vIndex31 = vIndex3 * 3 + 1, vIndex32 = vIndex3 * 3 + 2;
+	const int vIndex00 = vIndex0 * 3, vIndex10 = vIndex1 * 3, vIndex20 = vIndex2 * 3, vIndex30 = vIndex3 * 3;
+	const int vIndex01 = vIndex00 + 1, vIndex11 = vIndex10 + 1, vIndex21 = vIndex20 + 1, vIndex31 = vIndex30 + 1;
+	const int vIndex02 = vIndex00 + 2, vIndex12 = vIndex10 + 2, vIndex22 = vIndex20 + 2, vIndex32 = vIndex30 + 2;
 	//先计算shape矩阵
 	const float pos00 = positions[vIndex00], pos01 = positions[vIndex01], pos02 = positions[vIndex02];
 	const float D[9] = {
@@ -517,23 +510,24 @@ __global__ void calculateIF(float* positions, int* tetIndex,
 	//梯度减去
 	#pragma unroll
 	for (int i = 0;i < 9;i++) R[i] -= F[i];
-
 	MatrixProduct_3x3x4(R, &tetInvD3x4[threadid * 12], temp);
 	//对应的四个点的xyz分量
 	//这里应该需要原子操作
 	const float tetVolumn_volumnStiffness = tetVolumn[threadid] * volumnStiffness[threadid];
-	atomicAdd(&force[vIndex00], temp[0] * tetVolumn_volumnStiffness);
-	atomicAdd(&force[vIndex01], temp[4] * tetVolumn_volumnStiffness);
-	atomicAdd(&force[vIndex02], temp[8] * tetVolumn_volumnStiffness);
-	atomicAdd(&force[vIndex10], temp[1] * tetVolumn_volumnStiffness);
-	atomicAdd(&force[vIndex11], temp[5] * tetVolumn_volumnStiffness);
-	atomicAdd(&force[vIndex12], temp[9] * tetVolumn_volumnStiffness);
-	atomicAdd(&force[vIndex20], temp[2] * tetVolumn_volumnStiffness);
-	atomicAdd(&force[vIndex21], temp[6] * tetVolumn_volumnStiffness);
-	atomicAdd(&force[vIndex22], temp[10] * tetVolumn_volumnStiffness);
-	atomicAdd(&force[vIndex30], temp[3] * tetVolumn_volumnStiffness);
-	atomicAdd(&force[vIndex31], temp[7] * tetVolumn_volumnStiffness);
-	atomicAdd(&force[vIndex32], temp[11] * tetVolumn_volumnStiffness);
+	#pragma unroll
+	for (int i = 0;i < 12;i++)temp[i] *= tetVolumn_volumnStiffness;
+	atomicAdd(&force[vIndex00], temp[0]);
+	atomicAdd(&force[vIndex01], temp[4]);
+	atomicAdd(&force[vIndex02], temp[8]);
+	atomicAdd(&force[vIndex10], temp[1]);
+	atomicAdd(&force[vIndex11], temp[5]);
+	atomicAdd(&force[vIndex12], temp[9]);
+	atomicAdd(&force[vIndex20], temp[2]);
+	atomicAdd(&force[vIndex21], temp[6]);
+	atomicAdd(&force[vIndex22], temp[10]);
+	atomicAdd(&force[vIndex30], temp[3]);
+	atomicAdd(&force[vIndex31], temp[7]);
+	atomicAdd(&force[vIndex32], temp[11]);
 }
 
 __global__ void calculateIF_part(float* positions, int* tetIndex,
